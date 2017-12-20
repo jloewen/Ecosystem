@@ -1,23 +1,21 @@
 function Boid(id, loc){
   this.acc = new JSVector(0, 0);
-  this.vel = new JSVector(Math.random()*10-5, Math.random()*10-5);
+  this.vel = new JSVector((Math.random()*3)-1.5, (Math.random()*3)-1.5);
   this.id = id;
   this.loc = loc;
-  this.maxSpeed = 9;
+  this.maxSpeed = 2;
   this.maxForce = 1;
-  this.lifespan = 10000000000000000000000000000.0;
-  //this.rad = Math.random()*5+6;
-  this.rad = 20;
+  this.lifespan = 4000.0;
+  this.rad = 30;
   this.star = 'rgba(' + Math.floor(Math.random()*255) + ',' + Math.floor(Math.random()*255) + ',' + Math.floor(Math.random()*255) + ',';
-  //this.star = 'rgba(' + Math.floor(Math.random()*253333333333333333333333335) + ',' + Math.floor(Math.random()*253333333333333333333333335) + ',' + Math.floor(Math.random()*2553333333333333333333333) + ',';
   this.flock = function(boids){
     var sep = this.seperate(boids);
     var ali = this.alignment(boids);
     var coh = this.seperate(boids);
 
-    sep.mult(0.08);
-    ali.mult(0.75);
-    coh.mult(0.01);
+    sep.mult(0.2);
+    ali.mult(0.075);
+    coh.mult(0.05);
 
     this.applyForce(sep);
     this.applyForce(ali);
@@ -25,44 +23,40 @@ function Boid(id, loc){
   }
 }
 
-
 Boid.prototype.update = function(){
   this.flock(flock.boids);
-  this.loc.add(this.vel);
   this.vel.add(this.acc);
-  //console.log(this.angle);
-  this.vel.limit(5);
-  this.acc.x = 0;
-  this.acc.y = 0;
+  this.vel.limit(this.maxSpeed);
+  this.loc.add(this.vel);
+  this.acc.mult(0);
   this.lifespan -= 2;
-  if(this.loc.x  >= canvas.width || this.loc.x  <= 0){
+  if(this.loc.x + this.rad >= canvas.width || this.loc.x - this.rad <= 0){
     this.loc.x = canvas.width-this.loc.x;
-  //  this.vel.x = -(this.vel.x);
+    //this.vel.x = -(this.vel.x);
   }
-  if(this.loc.y >= canvas.height || this.loc.y <= 0){
+  if(this.loc.y + this.rad >= canvas.height || this.loc.y - this.rad <= 0){
     this.loc.y= canvas.height-this.loc.y;
-  //  this.vel.y = -(this.vel.y);
+    //this.vel.y = -(this.vel.y);
   }
 }
 
 Boid.prototype.render = function(){
-  ctx.beginPath();
-  //ctx.ellipse(this.loc.x, this.loc.y, this.rad, this.rad, 0, 0, 2*Math.PI);
+  this.c = this.star + this.lifespan/4000.0 + ')';
+  ctx.strokeStyle = this.c;
+  ctx.fillStyle = this.c;
   ctx.save();
   ctx.translate(this.loc.x, this.loc.y);
   this.angle = this.vel.getDirection()+Math.PI/2;
   ctx.rotate(this.angle);
   ctx.beginPath();
-  ctx.moveTo(-2, 0);
-  ctx.lineTo(2, 0);
-  ctx.lineTo(0, -9);
-
-  //this.c = this.star + this.lifespan/1000.0 + ')';
-  ctx.fillStyle = this.c;
+  //ctx.arc(0,0,this.rad,0,2*Math.PI);
+  ctx.moveTo(-6, 0);
+  ctx.lineTo(6, 0);
+  ctx.lineTo(0, -24);
   ctx.fill();
+  ctx.stroke();
   ctx.restore();
-  this.strokeStyle = this.c;
-  //ctx.stroke();
+
 }
 
 Boid.prototype.isDead = function(){
@@ -78,7 +72,7 @@ Boid.prototype.seek = function(target){
   desired.normalize();
   desired.mult(this.maxSpeed);
   var steer = JSVector.sub(desired, this.vel);
-  steer.limit(this.maxForce);
+  steer.limit(this.maxForce * 0.001);
   return steer;
 }
 
@@ -87,11 +81,11 @@ Boid.prototype.applyForce = function(f){
 }
 
 Boid.prototype.seperate = function(boids){
-  var desiredSep = 0.5*this.rad;
+  var desiredSep = 30;
   var sum = new JSVector(0, 0);
   var count = 0;
   for (var i = 0; i < boids.length; i++){
-    var distance = this.loc.distance(boids[i].loc)
+    var distance = this.loc.distance(boids[i].loc);
     if (distance < desiredSep && distance > 0){
       var f = JSVector.subGetNew(this.loc, boids[i].loc);
       f.normalize();
@@ -105,19 +99,19 @@ Boid.prototype.seperate = function(boids){
   }
   if (sum.getMag() > 0){
     sum.normalize();
-    sum.mult(this.maxSpeed /*/this.acc*/);
+    sum.mult(this.maxSpeed);
     sum.sub(this.vel);
-    sum.limit(this.maxForce);
   }
+  sum.limit(this.maxForce);
   return sum;
 }
 
 Boid.prototype.alignment = function(boids){
-  var neighborDist = 4*this.rad;
+  var neighborDist = 80;
   var sum = new JSVector(0, 0);
   var count = 0;
   for (var i = 0; i < boids.length; i++){
-    var distance = boids[i].loc.distance(this.loc)
+    var distance = this.loc.distance(boids[i].loc);
     if (distance < neighborDist && distance > 0){
       sum.add(boids[i].vel);
       count++;
@@ -126,7 +120,7 @@ Boid.prototype.alignment = function(boids){
   if (count > 0){
     sum.div(count);
     sum.normalize();
-    sum.mult(this.maxSpeed /*/this.acc*/);
+    sum.mult(this.maxSpeed);
     var steer = JSVector.subGetNew(sum, this.vel);
     steer.limit(this.maxForce);
     return steer;
@@ -136,11 +130,11 @@ Boid.prototype.alignment = function(boids){
 }
 
 Boid.prototype.cohesion = function(boids){
-  var neighborDist = 10*this.rad;
+  var neighborDist = 150;
   var sum = new JSVector(0, 0);
   var count = 0;
   for (var i = 0; i < boids.length; i++){
-    var distance = boids[i].loc.distance(this.loc)
+    var distance = this.loc.distance(boids[i].loc);
     if (distance < neighborDist && distance > 0){
         sum.add(boids[i].loc);
         count++;

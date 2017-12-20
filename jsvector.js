@@ -36,8 +36,8 @@ JSVector.addGetNew = function(vec1, vec2){
 }
 
 JSVector.prototype.sub = function(vec){
-  this.x-=vec.x||0;
-  this.y-=vec.y||0;
+  this.x-=vec.x;
+  this.y-=vec.y;
 }
 
 JSVector.subGetNew = function(vec1, vec2){
@@ -47,18 +47,19 @@ JSVector.subGetNew = function(vec1, vec2){
 }
 
 JSVector.prototype.mult = function(a){
-  this.x*=a||0;
-  this.y*=a||0;
+  this.x*=a;
+  this.y*=a;
 }
 
 JSVector.prototype.div = function(a){
-  this.x/=a||0;
-  this.y/=a||0;
+  this.x/=a;
+  this.y/=a;
 }
 
 JSVector.prototype.normalize = function(){
-  this.x/=this.getMag();
-  this.y/=this.getMag();
+  var mag = this.getMag();
+  this.x/=mag;
+  this.y/=mag;
 }
 
 JSVector.prototype.limit = function(lim){
@@ -90,7 +91,10 @@ JSVector.prototype.copy = function(){
 }
 
 JSVector.prototype.rotate = function(a){
-  return Math.atan2(this.y, this.x) + a;
+  var dx = this.x*Math.cos(a) - this.y*Math.sin(a);
+  var dy = this.x*Math.sin(a) + this.y*Math.cos(a);
+  this.x = dx;
+  this.y = dy;
 }
 
 JSVector.prototype.dot = function(){
